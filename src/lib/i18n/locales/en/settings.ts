@@ -1,0 +1,15 @@
+export default {
+  account: 'Account',
+  administration: 'Administration',
+  personalSettings: 'Personal Settings',
+  personalSettingsDesc: 'Manage your profile, email, and password',
+  preferences: 'Preferences',
+  preferencesDesc: 'Customize your workspace settings',
+  users: 'Users',
+  usersDesc: 'Manage user accounts and permissions',
+  security: 'Security',
+  securityDesc: 'Configure security settings and access controls',
+  language: 'Language',
+  updateSuccess: 'Settings updated successfully',
+  updateError: 'Failed to update settings',
+};

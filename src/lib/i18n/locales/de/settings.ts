@@ -1,0 +1,15 @@
+export default {
+  account: 'Konto',
+  administration: 'Administration',
+  personalSettings: 'Persönliche Einstellungen',
+  personalSettingsDesc: 'Verwalten Sie Ihr Profil, E-Mail und Passwort',
+  preferences: 'Präferenzen',
+  preferencesDesc: 'Passen Sie Ihre Arbeitsbereichseinstellungen an',
+  users: 'Benutzer',
+  usersDesc: 'Verwalten Sie Benutzerkonten und Berechtigungen',
+  security: 'Sicherheit',
+  securityDesc: 'Konfigurieren Sie Sicherheitseinstellungen und Zugriffskontrollen',
+  language: 'Sprache',
+  updateSuccess: 'Einstellungen erfolgreich aktualisiert',
+  updateError: 'Fehler beim Aktualisieren der Einstellungen',
+};
