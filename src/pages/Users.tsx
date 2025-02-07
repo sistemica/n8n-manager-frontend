@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { format } from 'date-fns';
 import { Search, X, Plus } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { getUsers } from '../services/userService';
 import type { User } from '../services/userService';
 import { isDarkTheme } from '../lib/theme';
+import { formatDate } from '../lib/date';
 import Table from '../components/Table';
 import TableSkeleton from '../components/TableSkeleton';
 import EditUserForm from '../components/EditUserForm';
@@ -88,12 +88,12 @@ export default function Users() {
     {
       key: 'lastLogin',
       header: t('users.lastLogin'),
-      render: (user: User) => user.lastLogin ? format(new Date(user.lastLogin), 'PPp') : '-',
+      render: (user: User) => formatDate(user.lastLogin),
     },
     {
       key: 'created',
       header: t('users.created'),
-      render: (user: User) => format(new Date(user.created), 'PPp'),
+      render: (user: User) => formatDate(user.created),
     },
   ];
 

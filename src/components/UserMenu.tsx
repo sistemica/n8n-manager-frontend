@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import pb from '../lib/pocketbase';
@@ -16,6 +16,9 @@ export default function UserMenu() {
     pb.authStore.clear();
     navigate('/');
   };
+
+  // Get the first letter of the user's name, fallback to 'U' if no name
+  const initial = (user?.name || 'User').charAt(0).toUpperCase();
 
   return (
     <div className="relative">
@@ -38,7 +41,13 @@ export default function UserMenu() {
             className="h-5 w-5 rounded-lg object-cover"
           />
         ) : (
-          <User className="h-5 w-5" />
+          <div className={`h-5 w-5 rounded-lg flex items-center justify-center text-xs font-semibold ${
+            isDarkTheme
+              ? 'bg-dark-600 text-white'
+              : 'bg-gray-200 text-gray-700'
+          }`}>
+            {initial}
+          </div>
         )}
         <span className="text-sm">{user?.name || 'User'}</span>
       </button>

@@ -5,9 +5,12 @@ import { AnimatePresence } from 'framer-motion';
 import LoginForm from './components/LoginForm';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import MainLayout from './layouts/MainLayout';
+import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import PersonalSettings from './pages/PersonalSettings';
 import Users from './pages/Users';
+import Instances from './pages/n8n/Instances';
+import Webhooks from './pages/n8n/Webhooks';
 import ProtectedRoute from './components/ProtectedRoute';
 import { isDarkTheme } from './lib/theme';
 import { ToastProvider } from './components/providers/ToastProvider';
@@ -29,9 +32,12 @@ function App() {
     const routes: React.ReactNode[] = [];
 
     routes.push(
+      <Route key="dashboard" path="dashboard" element={<Dashboard />} />,
       <Route key="settings" path="settings" element={<Settings />} />,
       <Route key="settings-personal" path="settings/personal" element={<PersonalSettings />} />,
-      <Route key="settings-users" path="settings/users" element={<Users />} />
+      <Route key="settings-users" path="settings/users" element={<Users />} />,
+      <Route key="n8n-instances" path="n8n/instances" element={<Instances />} />,
+      <Route key="n8n-webhooks" path="n8n/webhooks/:instanceId" element={<Webhooks />} />
     );
 
     navigation.forEach(section => {

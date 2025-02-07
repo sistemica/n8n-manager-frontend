@@ -47,11 +47,21 @@ function handleError(error: any): never {
 
 export async function createUser(userData: CreateUserData): Promise<User> {
   try {
+    // First, create the user without verification
     const record = await pb.collection(USERS_COLLECTION).create({
       ...userData,
       emailVisibility: false,
-      verified: userData.verified ?? false
+      verified: false // Always create as unverified first
     });
+
+    // If verification was requested, update the user in a second step
+    if (userData.verified) {
+      const updatedRecord = await pb.collection(USERS_COLLECTION).update(record.id, {
+        verified: true
+      });
+      return updatedRecord as User;
+    }
+
     return record as User;
   } catch (error) {
     handleError(error);
@@ -74,7 +84,7 @@ export async function getUsers(page: number = 1, perPage: number = 50): Promise<
 }> {
   try {
     const records = await pb.collection(USERS_COLLECTION).getList(page, perPage, {
-      sort: '-created',
+      sort: '-name',
     });
     
     return {

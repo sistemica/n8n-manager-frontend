@@ -5,6 +5,7 @@ import { Loader2, Mail, Lock, CheckCircle, XCircle } from 'lucide-react';
 import pb from '../lib/pocketbase';
 import { isDarkTheme } from '../lib/theme';
 import { useNavigate } from 'react-router-dom';
+import { ClientResponseError } from 'pocketbase';
 
 type LoginState = 'idle' | 'loading' | 'success' | 'error' | 'redirect';
 
@@ -17,13 +18,56 @@ export default function LoginForm() {
   const [isValid, setIsValid] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in
-    if (pb.authStore.isValid) {
-      setLoginState('redirect');
-      setTimeout(() => {
-        navigate('/app');
-      }, 1000);
-    }
+    let isSubscribed = true;
+
+    const verifyAuth = async () => {
+      // If there's a stored token
+      if (pb.authStore.isValid) {
+        if (isSubscribed) setLoginState('loading');
+        
+        try {
+          // Verify token with server
+          await pb.collection('users').authRefresh();
+          
+          // Only proceed if component is still mounted
+          if (isSubscribed) {
+            setLoginState('redirect');
+            setTimeout(() => {
+              navigate('/app');
+            }, 1000);
+          }
+        } catch (error) {
+          // Only handle error if component is still mounted
+          if (!isSubscribed) return;
+
+          console.error('Auth verification failed:', error);
+          
+          // Clear invalid token
+          pb.authStore.clear();
+          
+          // Handle specific error cases
+          if (error instanceof ClientResponseError) {
+            // Auto-cancellation or network issues
+            if (error.status === 0) {
+              console.warn('Auth verification cancelled or network unavailable');
+            }
+            // Unauthorized - invalid or expired token
+            else if (error.status === 401) {
+              console.warn('Auth token invalid or expired');
+            }
+          }
+          
+          setLoginState('idle');
+        }
+      }
+    };
+
+    verifyAuth();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isSubscribed = false;
+    };
   }, [navigate]);
 
   useEffect(() => {
@@ -45,6 +89,7 @@ export default function LoginForm() {
         navigate('/app');
       }, 2000);
     } catch (error) {
+      console.error('Login failed:', error);
       setLoginState('error');
       setTimeout(() => setLoginState('idle'), 2000);
     }

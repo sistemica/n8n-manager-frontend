@@ -15,11 +15,13 @@ import {
   History,
   Lock,
   Key,
-  Mail
+  Mail,
+  Workflow,
+  Webhook
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-export type NavItemType = 'link' | 'title';
+export type NavItemType = 'link' | 'title' | 'dynamic';
 
 export interface BaseNavItem {
   id: string;
@@ -37,15 +39,69 @@ export interface NavTitle extends BaseNavItem {
   type: 'title';
 }
 
+export interface NavDynamic extends BaseNavItem {
+  type: 'dynamic';
+  loadItems: () => Promise<NavLink[]>;
+}
+
 export interface MainNavItem {
   id: string;
   icon: LucideIcon;
   label: string;
   path: string;
-  subItems: (NavLink | NavTitle)[];
+  subItems: (NavLink | NavTitle | NavDynamic)[];
 }
 
 const navigation: MainNavItem[] = [
+  {
+    id: 'n8n',
+    icon: Workflow,
+    label: 'nav.n8n',
+    path: '/app/n8n',
+    subItems: [
+      {
+        type: 'title',
+        id: 'n8n-management',
+        label: 'nav.n8nManagement'
+      },
+      {
+        type: 'link',
+        id: 'instances',
+        icon: Server,
+        label: 'nav.instances',
+        path: '/app/n8n/instances'
+      },
+      {
+        type: 'title',
+        id: 'webhooks-section',
+        label: 'nav.webhooks'
+      },
+      {
+        type: 'dynamic',
+        id: 'webhooks',
+        label: 'nav.webhooks',
+        loadItems: async () => {
+          const pb = (await import('../lib/pocketbase')).default;
+          try {
+            const { items } = await pb.collection('n8n_instances').getList(1, 50, {
+              sort: 'host',
+              filter: 'availability_status = true'
+            });
+            return items.map(instance => ({
+              type: 'link' as const,
+              id: `webhook-${instance.id}`,
+              icon: Webhook,
+              label: instance.host.replace(/^https?:\/\//, ''),
+              path: `/app/n8n/webhooks/${instance.id}`
+            }));
+          } catch (error) {
+            console.error('Error loading instances:', error);
+            return [];
+          }
+        }
+      }
+    ]
+  },
   {
     id: 'database',
     icon: Database,

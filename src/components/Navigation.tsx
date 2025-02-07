@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Box } from 'lucide-react';
 import { isDarkTheme } from '../lib/theme';
-import navigation from '../config/navigation';
+import navigation, { NavLink, NavDynamic } from '../config/navigation';
+import DynamicSubmenu from './DynamicSubmenu';
 
 interface NavigationProps {
   activeSection: string | null;
@@ -15,6 +16,8 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const [dynamicItems, setDynamicItems] = useState<Record<string, NavLink[]>>({});
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   const handleNavClick = (itemId: string) => {
     if (activeSection === itemId) {
@@ -23,6 +26,28 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
       onSectionChange(itemId);
     }
   };
+
+  // Load dynamic items when a section is opened
+  useEffect(() => {
+    if (!activeSection) return;
+
+    const section = navigation.find(item => item.id === activeSection);
+    if (!section) return;
+
+    section.subItems.forEach(async (item) => {
+      if (item.type === 'dynamic' && !dynamicItems[item.id]) {
+        setLoading(prev => ({ ...prev, [item.id]: true }));
+        try {
+          const items = await item.loadItems();
+          setDynamicItems(prev => ({ ...prev, [item.id]: items }));
+        } catch (error) {
+          console.error(`Error loading dynamic items for ${item.id}:`, error);
+        } finally {
+          setLoading(prev => ({ ...prev, [item.id]: false }));
+        }
+      }
+    });
+  }, [activeSection]);
 
   return (
     <nav className="fixed left-0 top-0 flex h-screen z-40">
@@ -39,14 +64,7 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
                 isDarkTheme ? 'text-white' : 'text-gray-900'
               }`}
             >
-              {/* Replace the Box icon with your logo */}
               <Box className="h-5 w-5" />
-              {/* Alternatively, use an image:
-              <img 
-                src="/path/to/your/logo.svg" 
-                alt="Logo" 
-                className="h-5 w-5"
-              /> */}
             </a>
           </div>
 
@@ -102,6 +120,16 @@ export default function Navigation({ activeSection, onSectionChange }: Navigatio
                       >
                         {t(subItem.label)}
                       </div>
+                    );
+                  }
+
+                  if (subItem.type === 'dynamic') {
+                    return (
+                      <DynamicSubmenu
+                        key={subItem.id}
+                        items={dynamicItems[subItem.id] || []}
+                        isLoading={loading[subItem.id]}
+                      />
                     );
                   }
 

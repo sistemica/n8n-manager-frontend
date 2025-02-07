@@ -1,8 +1,14 @@
 export default {
   dashboard: 'Dashboard',
+  n8n: 'n8n',
   database: 'Database',
   statistics: 'Statistics',
   settings: 'Settings',
+  
+  // n8n section
+  n8nManagement: 'Management',
+  instances: 'Instances',
+  webhooks: 'Webhooks',
   
   // Database section
   dataManagement: 'Data Management',

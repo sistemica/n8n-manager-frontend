@@ -1,11 +1,12 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { isDarkTheme } from '../lib/theme';
 
 interface Column<T> {
   key: string;
   header: string;
   render?: (item: T) => React.ReactNode;
+  sortable?: boolean;
 }
 
 interface TableProps<T> {
@@ -15,6 +16,7 @@ interface TableProps<T> {
   error?: string | null;
   emptyMessage?: string;
   onRowClick?: (item: T) => void;
+  sortable?: boolean;
 }
 
 export default function Table<T>({ 
@@ -23,8 +25,40 @@ export default function Table<T>({
   loading, 
   error, 
   emptyMessage = 'No data found',
-  onRowClick 
+  onRowClick,
+  sortable = false
 }: TableProps<T>) {
+  const [sortConfig, setSortConfig] = React.useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+
+  const handleSort = (key: string) => {
+    if (!sortable) return;
+    
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig?.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedData = React.useMemo(() => {
+    if (!sortConfig) return data;
+
+    return [...data].sort((a, b) => {
+      const aValue = (a as any)[sortConfig.key];
+      const bValue = (b as any)[sortConfig.key];
+
+      if (aValue === bValue) return 0;
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      const comparison = aValue < bValue ? -1 : 1;
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    });
+  }, [data, sortConfig]);
+
   return (
     <div className={`-mx-6 ${isDarkTheme ? 'bg-dark-800/50' : 'bg-gray-100'}`}>
       <table className="w-full">
@@ -33,11 +67,28 @@ export default function Table<T>({
             {columns.map((column) => (
               <th
                 key={column.key}
+                onClick={() => handleSort(column.key)}
                 className={`px-6 py-4 text-xs font-bold text-left ${
                   isDarkTheme ? 'text-dark-200' : 'text-gray-500'
-                }`}
+                } ${sortable ? 'cursor-pointer select-none' : ''}`}
               >
-                {column.header}
+                <div className="flex items-center space-x-2">
+                  <span>{column.header}</span>
+                  {sortable && (
+                    <div className="flex flex-col">
+                      <ChevronUp className={`h-3 w-3 ${
+                        sortConfig?.key === column.key && sortConfig.direction === 'asc'
+                          ? isDarkTheme ? 'text-white' : 'text-gray-900'
+                          : isDarkTheme ? 'text-dark-400' : 'text-gray-400'
+                      }`} />
+                      <ChevronDown className={`h-3 w-3 -mt-1 ${
+                        sortConfig?.key === column.key && sortConfig.direction === 'desc'
+                          ? isDarkTheme ? 'text-white' : 'text-gray-900'
+                          : isDarkTheme ? 'text-dark-400' : 'text-gray-400'
+                      }`} />
+                    </div>
+                  )}
+                </div>
               </th>
             ))}
             {onRowClick && <th className="w-10 pr-4" />}
@@ -65,7 +116,7 @@ export default function Table<T>({
                 </span>
               </td>
             </tr>
-          ) : data.length === 0 ? (
+          ) : sortedData.length === 0 ? (
             <tr>
               <td colSpan={columns.length + (onRowClick ? 1 : 0)} className="px-6 py-4 text-center">
                 <span className={isDarkTheme ? 'text-dark-200' : 'text-gray-500'}>
@@ -74,7 +125,7 @@ export default function Table<T>({
               </td>
             </tr>
           ) : (
-            data.map((item, index) => (
+            sortedData.map((item, index) => (
               <tr 
                 key={index}
                 onClick={() => onRowClick?.(item)}
