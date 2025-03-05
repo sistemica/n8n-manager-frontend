@@ -33,7 +33,7 @@ export interface UpdateN8nInstanceData {
   check_interval_mins?: number;
 }
 
-const N8N_COLLECTION = 'n8n_instances';
+const N8N_COLLECTION = 'instances';
 
 function handleError(error: any): never {
   if (error instanceof ClientResponseError) {

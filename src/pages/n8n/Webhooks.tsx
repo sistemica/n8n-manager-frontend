@@ -83,28 +83,49 @@ export default function Webhooks() {
   const getWebhookPath = (url: string) => {
     try {
       const urlObj = new URL(url);
-      return urlObj.pathname.replace('/webhook/', '');
+      return urlObj.pathname;
+    } catch {
+      return url;
+    }
+  };
+
+  const getHostClean = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.host; // Returns host without protocol
     } catch {
       return url;
     }
   };
 
   // Function to safely parse methods
-  const parseMethods = (methodsStr: string): string[] => {
+  const parseMethods = (methodsStr: string | string[]): string[] => {
     try {
       // If it's already an array, return it
       if (Array.isArray(methodsStr)) return methodsStr;
       
+      // If it's undefined, null or empty string, return empty array
+      if (!methodsStr) return [];
+      
       // If it's a JSON string, parse it
-      if (typeof methodsStr === 'string' && methodsStr.startsWith('[')) {
-        return JSON.parse(methodsStr);
+      if (typeof methodsStr === 'string' && (methodsStr.startsWith('[') || methodsStr.includes(','))) {
+        try {
+          const parsed = JSON.parse(methodsStr);
+          return Array.isArray(parsed) ? parsed : [methodsStr];
+        } catch {
+          // If it's a comma-separated string but not valid JSON
+          if (methodsStr.includes(',')) {
+            return methodsStr.split(',').map(m => m.trim()).filter(Boolean);
+          }
+          return [methodsStr];
+        }
       }
       
       // If it's a single method string, wrap it in an array
       return [methodsStr];
-    } catch {
+    } catch (err) {
       // If parsing fails, return an empty array
-      console.warn('Failed to parse methods:', methodsStr);
+      console.warn('Failed to parse methods:', methodsStr, err);
       return [];
     }
   };
@@ -116,8 +137,30 @@ export default function Webhooks() {
 
   const columns = [
     {
+      key: 'webhook_host',
+      header: t('n8n.host'),
+      render: (webhook: Webhook) => (
+        <div className="flex items-center">
+          <span className={isDarkTheme ? 'text-white' : 'text-gray-900'}>
+            {getHostClean(webhook.webhook_url)}
+          </span>
+        </div>
+      ),
+    },
+    {
       key: 'webhook_url',
       header: t('n8n.webhookUrl'),
+      render: (webhook: Webhook) => (
+        <div className="flex items-center">
+          <span className={isDarkTheme ? 'text-white' : 'text-gray-900'}>
+            {getWebhookPath(webhook.webhook_url)}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'webhook_secured',
+      header: t('n8n.secured'),
       render: (webhook: Webhook) => (
         <div className="flex items-center">
           {webhook.auth_type ? (
@@ -133,9 +176,6 @@ export default function Webhooks() {
               <AlertTriangle className="h-4 w-4" />
             </span>
           )}
-          <span className={isDarkTheme ? 'text-white' : 'text-gray-900'}>
-            {getWebhookPath(webhook.webhook_url)}
-          </span>
         </div>
       ),
     },
@@ -143,52 +183,74 @@ export default function Webhooks() {
       key: 'methods',
       header: t('n8n.methods'),
       render: (webhook: Webhook) => {
-        const methods = parseMethods(webhook.methods);
+        // Handle cases where methods is undefined, null, empty string, or empty array
+        const methods = webhook.methods ? parseMethods(webhook.methods) : [];
+        const isEmpty = methods.length === 0 || methods.every(m => !m); // Check if empty or contains only empty strings
+        
         return (
           <div className="flex flex-wrap gap-1">
-            {methods.map((method, index) => {
-              let bgColor = '';
-              let textColor = '';
-              
-              // Color mapping for different HTTP methods
-              switch (method.toUpperCase()) {
-                case 'GET':
-                  bgColor = isDarkTheme ? 'bg-blue-500/20' : 'bg-blue-100';
-                  textColor = isDarkTheme ? 'text-blue-400' : 'text-blue-700';
-                  break;
-                case 'POST':
-                  bgColor = isDarkTheme ? 'bg-green-500/20' : 'bg-green-100';
-                  textColor = isDarkTheme ? 'text-green-400' : 'text-green-700';
-                  break;
-                case 'PUT':
-                  bgColor = isDarkTheme ? 'bg-yellow-500/20' : 'bg-yellow-100';
-                  textColor = isDarkTheme ? 'text-yellow-400' : 'text-yellow-700';
-                  break;
-                case 'DELETE':
-                  bgColor = isDarkTheme ? 'bg-red-500/20' : 'bg-red-100';
-                  textColor = isDarkTheme ? 'text-red-400' : 'text-red-700';
-                  break;
-                case 'PATCH':
-                  bgColor = isDarkTheme ? 'bg-purple-500/20' : 'bg-purple-100';
-                  textColor = isDarkTheme ? 'text-purple-400' : 'text-purple-700';
-                  break;
-                default:
-                  bgColor = isDarkTheme ? 'bg-dark-700' : 'bg-gray-100';
-                  textColor = isDarkTheme ? 'text-dark-200' : 'text-gray-600';
-              }
-
-              return (
-                <span
-                  key={`${method}-${index}`}
-                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${bgColor} ${textColor}`}
-                >
-                  {method.toUpperCase()}
-                </span>
-              );
-            })}
+            {!isEmpty ? (
+              methods.map((method, index) => {
+                let bgColor = '';
+                let textColor = '';
+                
+                // Color mapping for different HTTP methods
+                switch (method.toUpperCase()) {
+                  case 'GET':
+                    bgColor = isDarkTheme ? 'bg-blue-500/20' : 'bg-blue-100';
+                    textColor = isDarkTheme ? 'text-blue-400' : 'text-blue-700';
+                    break;
+                  case 'POST':
+                    bgColor = isDarkTheme ? 'bg-green-500/20' : 'bg-green-100';
+                    textColor = isDarkTheme ? 'text-green-400' : 'text-green-700';
+                    break;
+                  case 'PUT':
+                    bgColor = isDarkTheme ? 'bg-yellow-500/20' : 'bg-yellow-100';
+                    textColor = isDarkTheme ? 'text-yellow-400' : 'text-yellow-700';
+                    break;
+                  case 'DELETE':
+                    bgColor = isDarkTheme ? 'bg-red-500/20' : 'bg-red-100';
+                    textColor = isDarkTheme ? 'text-red-400' : 'text-red-700';
+                    break;
+                  case 'PATCH':
+                    bgColor = isDarkTheme ? 'bg-purple-500/20' : 'bg-purple-100';
+                    textColor = isDarkTheme ? 'text-purple-400' : 'text-purple-700';
+                    break;
+                  default:
+                    bgColor = isDarkTheme ? 'bg-dark-700' : 'bg-gray-100';
+                    textColor = isDarkTheme ? 'text-dark-200' : 'text-gray-600';
+                }
+    
+                return (
+                  <span
+                    key={`${method}-${index}`}
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${bgColor} ${textColor}`}
+                  >
+                    {method.toUpperCase()}
+                  </span>
+                );
+              })
+            ) : (
+              <span
+                className={`px-2 py-0.5 text-xs font-medium rounded-full ${isDarkTheme ? 'bg-indigo-500/20' : 'bg-indigo-100'} ${isDarkTheme ? 'text-indigo-400' : 'text-indigo-700'}`}
+              >
+                ALL
+              </span>
+            )}
           </div>
         );
       },
+    },
+    {
+      key: 'route',
+      header: t('n8n.route'),
+      render: (webhook: Webhook) => (
+        <div className="flex items-center">
+          <span className={isDarkTheme ? 'text-white' : 'text-gray-900'}>
+            {webhook.route}
+          </span>
+        </div>
+      ),
     },
     {
       key: 'workflow_name',

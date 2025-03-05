@@ -35,6 +35,8 @@ export default {
   },
   openInstance: 'Open instance',
   webhookUrl: 'Webhook URL',
+  route: 'API Route',
   workflowName: 'Workflow Name',
   methods: 'Methods',
+  secured: 'Protected',
 };

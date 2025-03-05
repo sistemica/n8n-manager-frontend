@@ -35,6 +35,8 @@ export default {
     'default': 'Verbindung fehlgeschlagen. Bitte überprüfen Sie die Instanzkonfiguration.',
   },
   webhookUrl: 'Webhook URL',
+  route: 'API Route',
   workflowName: 'Workflow Name',
   methods: 'Methoden',
+  secured: 'Geschützt',
 };

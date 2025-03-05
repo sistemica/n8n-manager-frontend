@@ -83,7 +83,7 @@ const navigation: MainNavItem[] = [
         loadItems: async () => {
           const pb = (await import('../lib/pocketbase')).default;
           try {
-            const { items } = await pb.collection('n8n_instances').getList(1, 50, {
+            const { items } = await pb.collection('instances').getList(1, 50, {
               sort: 'host',
               filter: 'availability_status = true'
             });
